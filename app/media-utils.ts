@@ -1,3 +1,4 @@
+import {requestStudio} from "../lib/local-studio";
 import {Content,Draft,Format,platformNames} from "./types";
 
 export const slug=(name:string)=>name.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9_-]+/g,"-").replace(/^-|-$/g,"").slice(0,80)||"contenu";
@@ -75,7 +76,7 @@ export async function zipFile(files:{name:string;blob:Blob}[]){
 }
 export async function contentPack(content:Content,drafts:Draft[]){
  const files:{name:string;blob:Blob}[]=[];const cache=new Map<Format,Blob>();
- let original:Blob|undefined;if(content.fileId){const r=await fetch("/api/media/"+content.fileId);if(!r.ok)throw new Error("Le média original est indisponible.");original=await r.blob();}
+ let original:Blob|undefined;if(content.fileId){const r=await requestStudio("/api/media/"+content.fileId);if(!r.ok)throw new Error("Le média original est indisponible.");original=await r.blob();}
  for(const d of drafts){files.push({name:d.platform+"/legende.txt",blob:new Blob([d.caption],{type:"text/plain;charset=utf-8"})});if(original&&content.kind==="image"){if(!cache.has(d.format))cache.set(d.format,await adaptImage(original,d.format));const adapted=cache.get(d.format)!;files.push({name:d.platform+"/visuel."+(adapted.type==="image/jpeg"?"jpg":adapted.type==="image/png"?"png":"webp"),blob:adapted});}}
  if(original&&content.kind==="video")files.push({name:"video-originale."+({"video/mp4":"mp4","video/quicktime":"mov","video/webm":"webm"}[original.type]??"mp4"),blob:original});
  files.push({name:"planning.ics",blob:calendarFile(drafts,[content])},{name:"informations.json",blob:new Blob([JSON.stringify({content,drafts},null,2)],{type:"application/json"})},{name:"LISEZ-MOI.txt",blob:new Blob(["Relai · Pack de diffusion\n\nLes légendes sont modifiables. Les images sont adaptées aux formats choisis avec un fond flouté.\nPour les vidéos, le pack contient le fichier original ; exportez chaque extrait adapté depuis l’éditeur.\nLes dates du calendrier correspondent à des publications manuelles. Aucun contenu n’a été publié automatiquement.\n"],{type:"text/plain;charset=utf-8"})});
