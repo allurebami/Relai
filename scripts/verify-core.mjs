@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import ts from 'typescript';
+
+const compile=async path=>ts.transpileModule(await readFile(path,'utf8'),{compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ES2022}}).outputText;
+const url=code=>'data:text/javascript;base64,'+Buffer.from(code).toString('base64');
+const typeUrl=url(await compile('app/types.ts'));
+const types=await import(typeUrl);
+const media=await import(url((await compile('app/media-utils.ts')).replace('"./types"',JSON.stringify(typeUrl))));
+const content={id:types.newId(),title:'Un projet, une idée ; et des élèves',notes:'Ligne 1\nLigne 2',kind:'text',brand:'SIU',createdAt:'2026-10-25T05:00:00.000Z'};
+let studio={...types.emptyStudio,contents:[content]};
+studio=types.prepareDrafts(studio,content,[...types.platforms]);
+assert.equal(studio.drafts.length,5);
+assert.equal(new Set(studio.drafts.map(d=>d.id)).size,5);
+studio.drafts[0].caption='Texte personnalisé à préserver.';
+const again=types.prepareDrafts(studio,content,[...types.platforms]);
+assert.equal(again.drafts.length,5,'Applying twice must not create duplicate posts');
+assert.equal(again.drafts[0].caption,studio.drafts[0].caption,'Applying twice must preserve edits');
+assert.equal(types.captionFor({...content,notes:'x'.repeat(10000)},'instagram','').length,2150);
+const draft={...studio.drafts[0],scheduledAt:'2026-10-30T14:00:00.000Z',status:'scheduled'};
+const ics=await media.calendarFile([draft],[content]).text();
+assert.ok(ics.includes('DTSTART:20261030T140000Z'));
+assert.ok(ics.includes('Un projet\\, une idée \\; et des élèves'));
+assert.ok(ics.includes('Publication manuelle prévue.'));
+for(const line of ics.split('\r\n'))assert.ok(Buffer.byteLength(line)<=75,'Calendar lines must be folded by UTF-8 byte length');
+const pack=await media.contentPack(content,[draft]);
+await mkdir('.sites-runtime',{recursive:true});
+await writeFile('.sites-runtime/core-test.zip',Buffer.from(await pack.arrayBuffer()));
+console.log('Core verification passed: five destinations, duplicate prevention, edit preservation, caption limits, UTC calendar and Unicode folding.');
+
+const gateway=await import(url(await compile('worker/private-gateway.ts')));
+const request=new Request('https://relai.example/');
+assert.equal((await gateway.requirePrivateGateway(request))?.status,503);
+assert.equal((await gateway.requirePrivateGateway(request,'x'.repeat(32)))?.status,401);
+assert.equal(await gateway.requirePrivateGateway(new Request('https://relai.example/',{headers:{'x-relai-gateway-token':'x'.repeat(32)}}),'x'.repeat(32)),null);
+assert.equal((await gateway.requirePrivateGateway(new Request('https://relai.example/',{headers:{'x-relai-gateway-token':'wrong'}}),'x'.repeat(32)))?.status,401);
+console.log('Production access guard verified: disabled without configuration, rejects missing/invalid credentials, accepts trusted gateway.');
