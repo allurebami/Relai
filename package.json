@@ -1,8 +1,8 @@
 {
   "name": "relai-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "Studio de préparation de contenus multiréseaux pour Vercel.",
+  "description": "Studio de contenus avec connexions sociales OAuth pour Vercel.",
   "type": "module",
   "engines": {
     "node": "24.x"
@@ -13,7 +13,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node scripts/verify-core.mjs"
+    "test": "node scripts/verify-core.mjs && node scripts/verify-social.mjs"
   },
   "dependencies": {
     "next": "16.3.4",

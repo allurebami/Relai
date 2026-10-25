@@ -4,6 +4,8 @@
 /.vercel/
 /.relai-test/
 .env*
+!.env.example
+.relai-admin-password
 *.tsbuildinfo
 .DS_Store
 *.log

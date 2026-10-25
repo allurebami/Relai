@@ -18,7 +18,7 @@ Cette version utilise **Next.js standard**, React et TypeScript. Elle remplace l
 | Output Directory | .next |
 | Node.js | 24.x |
 | Install Command | Détection automatique via packageManager et pnpm-lock.yaml |
-| Variables d’environnement | Aucune pour cette V1 locale |
+| Variables d’environnement | Aucune pour la préparation locale ; voir le guide pour les connexions sociales |
 
 Le fichier vercel.json définit le framework et la sortie. Les scripts package.json lancent les commandes Next.js natives.
 
@@ -52,7 +52,9 @@ Le stockage partagé entre appareils et la gestion des utilisateurs nécessitero
 
 Les packs vidéo contiennent l’original. Les extraits adaptés s’exportent individuellement depuis l’éditeur et leur encodage prend environ la durée de l’extrait.
 
-Les réseaux sociaux ne sont pas encore connectés. Le calendrier organise une diffusion manuelle et ne déclenche pas d’envoi automatique.
+Les parcours de connexion OAuth pour Instagram, Facebook, YouTube, TikTok et LinkedIn sont implémentés. Leur activation exige un stockage sécurisé et les applications développeur correspondantes : **[guide de configuration](docs/social-connections.md)**. Aucun compte n’est affiché comme autorisé avant une réponse réelle du réseau.
+
+La publication directe et programmée n’est pas encore implémentée. Le calendrier organise une diffusion manuelle et ne déclenche pas d’envoi automatique. Les connexions sont communes à un espace administrateur unique ; les fichiers et brouillons restent locaux.
 
 ## Installation locale
 
@@ -76,7 +78,7 @@ npm run build
 npm start
 ~~~
 
-Les tests vérifient les déclinaisons, le calendrier, la conservation des textes, la persistance IndexedDB, les conflits entre onglets et l’import/lecture/suppression des médias. La simulation IndexedDB sous Node complète les vérifications du navigateur.
+Les tests vérifient les parcours OAuth avec des réponses réseau interceptées (aucun consentement réel simulé dans le produit), puis les déclinaisons, le calendrier, la conservation des textes, la persistance IndexedDB, les conflits entre onglets et l’import/lecture/suppression des médias. La simulation IndexedDB sous Node complète les vérifications du navigateur.
 
 ## Structure
 
@@ -86,5 +88,9 @@ Les tests vérifient les déclinaisons, le calendrier, la conservation des texte
 | lib/local-studio.ts | Stockage IndexedDB et contrôle des versions |
 | lib/studio-schema.ts | Validation des données |
 | lib/use-media-url.ts | Lecture des médias locaux dans l’interface |
-| scripts/verify-core.mjs | Tests fonctionnels du cœur et du stockage |
+| lib/social/ | Autorisations OAuth, chiffrement, sessions et stockage sécurisé |
+| app/api/social/ | API serveur de connexion et de gestion des comptes |
+| app/social-connections.tsx | Interface des comptes sociaux et configuration |
+| docs/social-connections.md | Activation des réseaux et variables serveur |
+| scripts/verify-core.mjs, scripts/verify-social.mjs | Tests du studio et des connexions |
 | vercel.json | Configuration du déploiement |
